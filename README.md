@@ -88,7 +88,7 @@ python predict.py --input path/to/photo.jpg --checkpoint checkpoints/best.pt
 Enhance every image in a folder:
 
 ```bash
-python predict.py --input path/to/photos --checkpoint checkpoints/best.pt
+python predict.py --input new_photos --checkpoint checkpoints/best.pt
 ```
 
 Enhanced images are saved to `outputs/predictions/`.

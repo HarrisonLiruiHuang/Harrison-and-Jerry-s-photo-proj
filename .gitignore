@@ -14,6 +14,10 @@ runs/
 *.pth
 *.zip
 
+# Put new photos here for prediction; keep the images out of Git.
+new_photos/*
+!new_photos/.gitkeep
+
 # Python
 __pycache__/
 .venv/
