@@ -14,8 +14,9 @@ from torchvision.transforms import functional as F
 
 from fivek_project.suggestion_model import build_suggestion_model
 from fivek_project.suggestions import (
+    SLIDER_LABELS,
     slider_defaults_from_labels,
-    suggestions_from_labels,
+    slider_suggestions_from_labels,
     tensor_to_labels,
 )
 from predict import pick_device
@@ -145,6 +146,31 @@ HTML_PAGE = """<!doctype html>
     }}
     .suggestions li {{
       margin: 7px 0;
+    }}
+    .suggestion-table {{
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 6px;
+    }}
+    .suggestion-table th,
+    .suggestion-table td {{
+      padding: 10px 12px;
+      border-bottom: 1px solid #dde2de;
+      text-align: left;
+    }}
+    .suggestion-table th {{
+      font-size: 13px;
+      color: #4a534e;
+      background: #f5f7f4;
+    }}
+    .suggestion-table td:nth-child(2) {{
+      width: 80px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }}
+    .suggestion-table tr:last-child td {{
+      border-bottom: 0;
     }}
     .controls {{
       margin-top: 16px;
@@ -277,11 +303,12 @@ class SuggestionServer(BaseHTTPRequestHandler):
 
         try:
             image_bytes = self.read_uploaded_image()
-            image, labels, suggestions = self.suggest(image_bytes)
+            image, labels = self.suggest(image_bytes)
+            slider_values = slider_defaults_from_labels(labels)
             result = RESULT_HTML.format(
                 image=image_to_base64(image),
-                controls=controls_to_html(slider_defaults_from_labels(labels)),
-                suggestions=suggestions_to_html(suggestions),
+                controls=controls_to_html(slider_values),
+                suggestions=suggestions_to_html(labels),
             )
             self.send_page(result=result)
         except Exception as error:
@@ -303,7 +330,7 @@ class SuggestionServer(BaseHTTPRequestHandler):
         raise ValueError("No image upload found.")
 
     @torch.no_grad()
-    def suggest(self, image_bytes: bytes) -> tuple[Image.Image, dict[str, float], list[str]]:
+    def suggest(self, image_bytes: bytes) -> tuple[Image.Image, dict[str, float]]:
         with Image.open(io.BytesIO(image_bytes)) as image:
             original = ImageOps.exif_transpose(image).convert("RGB")
 
@@ -316,8 +343,7 @@ class SuggestionServer(BaseHTTPRequestHandler):
         tensor = F.to_tensor(model_image).unsqueeze(0).to(self.device)
         prediction = self.model(tensor).squeeze(0)
         labels = tensor_to_labels(prediction)
-        suggestions = suggestions_from_labels(labels, model_image)
-        return original, labels, suggestions
+        return original, labels
 
     def send_page(self, message: str = "", result: str = "") -> None:
         page = HTML_PAGE.format(
@@ -368,22 +394,35 @@ def main() -> None:
 
 
 def controls_to_html(defaults: dict[str, int]) -> str:
-    labels = {
-        "brightness": "Brightness",
-        "contrast": "Contrast",
-        "saturation": "Saturation",
-        "temperature": "Warmth",
-        "clarity": "Clarity",
-    }
     return "".join(
         CONTROL_HTML.format(name=name, label=label, value=defaults.get(name, 0))
-        for name, label in labels.items()
+        for name, label in SLIDER_LABELS.items()
     )
 
 
-def suggestions_to_html(suggestions: list[str]) -> str:
-    items = "".join(f"<li>{html.escape(suggestion)}</li>" for suggestion in suggestions)
-    return f"<ul>{items}</ul>"
+def suggestions_to_html(labels: dict[str, float]) -> str:
+    rows = []
+    for label, value, direction in slider_suggestions_from_labels(labels):
+        signed_value = format_signed(value)
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(label)}</td>"
+            f"<td>{html.escape(signed_value)}</td>"
+            f"<td>{html.escape(direction)}</td>"
+            "</tr>"
+        )
+    return (
+        "<table class='suggestion-table'>"
+        "<thead><tr><th>Adjustment</th><th>Value</th><th>Meaning</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody>"
+        "</table>"
+    )
+
+
+def format_signed(value: int) -> str:
+    if value > 0:
+        return f"+{value}"
+    return str(value)
 
 
 def image_to_base64(image: Image.Image) -> str:

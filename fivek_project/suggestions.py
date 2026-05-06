@@ -17,6 +17,14 @@ EDIT_NAMES = [
     "clarity",
 ]
 
+SLIDER_LABELS = {
+    "brightness": "Brightness",
+    "contrast": "Contrast",
+    "saturation": "Saturation",
+    "temperature": "Warmth",
+    "clarity": "Clarity",
+}
+
 
 @dataclass
 class ImageStats:
@@ -126,6 +134,22 @@ def slider_defaults_from_labels(labels: dict[str, float]) -> dict[str, int]:
         "temperature": slider_value(labels["temperature"], scale=24),
         "clarity": slider_value(labels["clarity"], scale=22),
     }
+
+
+def slider_suggestions_from_labels(labels: dict[str, float]) -> list[tuple[str, int, str]]:
+    values = slider_defaults_from_labels(labels)
+    return [
+        (SLIDER_LABELS[name], values[name], slider_direction(values[name]))
+        for name in SLIDER_LABELS
+    ]
+
+
+def slider_direction(value: int) -> str:
+    if value > 0:
+        return f"increase by {value}"
+    if value < 0:
+        return f"decrease by {abs(value)}"
+    return "keep at 0"
 
 
 def direction(value: float) -> str:

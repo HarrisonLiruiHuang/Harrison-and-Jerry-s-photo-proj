@@ -95,6 +95,10 @@ a manual slider preview, and model-generated text suggestions based on the input
 image. The web preview uses the uploaded image at its original resolution, while
 the model still analyzes a 256 x 256 copy internally.
 
+The web suggestions use the same five numeric controls as the manual editor:
+Brightness, Contrast, Saturation, Warmth, and Clarity. Positive values mean
+increase; negative values mean decrease.
+
 ## Research Question
 
 Can a neural network learn to analyze an original photo and generate useful
