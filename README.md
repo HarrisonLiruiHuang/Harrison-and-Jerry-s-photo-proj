@@ -93,6 +93,16 @@ python predict.py --input new_photos --checkpoint checkpoints/best.pt
 
 Enhanced images are saved to `outputs/predictions/`.
 
+## Local Web App
+
+Run a browser UI for uploading and enhancing images:
+
+```bash
+python web_app.py --checkpoint checkpoints/best.pt
+```
+
+Then open `http://127.0.0.1:8000`.
+
 ## Research Question
 
 Can a neural network learn to automatically enhance original photos to match
