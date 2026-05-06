@@ -126,10 +126,11 @@ HTML_PAGE = """<!doctype html>
     }}
     .manual-preview {{
       filter:
-        brightness(var(--brightness, 1))
+        brightness(var(--exposure, 1))
         contrast(var(--contrast, 1))
-        saturate(var(--saturation, 1))
-        sepia(var(--warmth, 0));
+        saturate(var(--vibrance, 1))
+        sepia(var(--warmth, 0))
+        hue-rotate(var(--cool, 0deg));
     }}
     .suggestions {{
       margin-top: 16px;
@@ -240,10 +241,15 @@ HTML_PAGE = """<!doctype html>
         const output = document.querySelector(`[data-value="${{name}}"]`);
         if (output) output.textContent = value > 0 ? `+${{value}}` : String(value);
       }});
-      preview.style.setProperty("--brightness", String(1 + (values.brightness || 0) / 100));
-      preview.style.setProperty("--contrast", String(1 + (values.contrast || 0) / 100));
-      preview.style.setProperty("--saturation", String(1 + (values.saturation || 0) / 100));
-      preview.style.setProperty("--warmth", String(Math.max(0, values.temperature || 0) / 160));
+      const exposure = (values.exposure || 0) + (values.brilliance || 0) * 0.35 + (values.shadows || 0) * 0.18 - (values.highlights || 0) * 0.12;
+      const contrast = (values.contrast || 0) + (values.brilliance || 0) * 0.20 + (values.sharpness || 0) * 0.12;
+      const vibrance = values.vibrance || 0;
+      const warmth = values.warmth || 0;
+      preview.style.setProperty("--exposure", String(1 + exposure / 100));
+      preview.style.setProperty("--contrast", String(1 + contrast / 100));
+      preview.style.setProperty("--vibrance", String(1 + vibrance / 100));
+      preview.style.setProperty("--warmth", String(Math.max(0, warmth) / 160));
+      preview.style.setProperty("--cool", `${{Math.min(0, warmth) * 0.45}}deg`);
     }};
     controls.forEach((control) => control.addEventListener("input", updatePreview));
     updatePreview();

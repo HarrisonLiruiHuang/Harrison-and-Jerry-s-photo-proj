@@ -18,11 +18,14 @@ EDIT_NAMES = [
 ]
 
 SLIDER_LABELS = {
-    "brightness": "Brightness",
+    "highlights": "Highlights",
+    "shadows": "Shadows",
     "contrast": "Contrast",
-    "saturation": "Saturation",
-    "temperature": "Warmth",
-    "clarity": "Clarity",
+    "vibrance": "Vibrance",
+    "sharpness": "Sharpness",
+    "exposure": "Exposure",
+    "brilliance": "Brilliance",
+    "warmth": "Warmth",
 }
 
 
@@ -128,11 +131,14 @@ def suggestions_from_labels(labels: dict[str, float], image: Image.Image | None 
 
 def slider_defaults_from_labels(labels: dict[str, float]) -> dict[str, int]:
     return {
-        "brightness": slider_value(labels["brightness"], scale=60),
+        "highlights": slider_value(labels["highlights"], scale=60),
+        "shadows": slider_value(labels["shadows"], scale=60),
         "contrast": slider_value(labels["contrast"], scale=60),
-        "saturation": slider_value(labels["saturation"], scale=60),
-        "temperature": slider_value(labels["temperature"], scale=60),
-        "clarity": slider_value(labels["clarity"], scale=60),
+        "vibrance": slider_value(labels["saturation"], scale=60),
+        "sharpness": slider_value(labels["clarity"], scale=60),
+        "exposure": slider_value(labels["brightness"], scale=60),
+        "brilliance": slider_value(brilliance_value(labels), scale=60),
+        "warmth": slider_value(labels["temperature"], scale=60),
     }
 
 
@@ -232,6 +238,15 @@ def overall_sentence(labels: dict[str, float]) -> str:
 
 def slider_value(value: float, scale: int) -> int:
     return int(round(clamp(value) * scale))
+
+
+def brilliance_value(labels: dict[str, float]) -> float:
+    return clamp(
+        (labels["brightness"] * 0.30)
+        + (labels["contrast"] * 0.25)
+        + (labels["shadows"] * 0.25)
+        - (labels["highlights"] * 0.20)
+    )
 
 
 def range_magnitudes(value: int) -> tuple[int, int]:
