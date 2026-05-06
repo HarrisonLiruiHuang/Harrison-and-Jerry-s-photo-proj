@@ -97,9 +97,8 @@ the model still analyzes a 256 x 256 copy internally.
 
 The web suggestions use the same five numeric controls as the manual editor:
 Brightness, Contrast, Saturation, Warmth, and Clarity. Positive values mean
-increase; negative values mean decrease. Suggestions are shown as practical
-ranges, such as `+20~+35`, and the slider starts near the middle of the
-recommended range.
+increase; negative values mean decrease. Suggestions are shown as ranges around
+the trained model's predicted slider value.
 
 ## Research Question
 

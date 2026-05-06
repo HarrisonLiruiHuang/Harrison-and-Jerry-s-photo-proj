@@ -128,11 +128,11 @@ def suggestions_from_labels(labels: dict[str, float], image: Image.Image | None 
 
 def slider_defaults_from_labels(labels: dict[str, float]) -> dict[str, int]:
     return {
-        "brightness": exaggerated_slider_value(labels["brightness"], scale=95),
-        "contrast": exaggerated_slider_value(labels["contrast"], scale=90),
-        "saturation": exaggerated_slider_value(labels["saturation"], scale=100),
-        "temperature": exaggerated_slider_value(labels["temperature"], scale=85),
-        "clarity": exaggerated_slider_value(labels["clarity"], scale=85),
+        "brightness": slider_value(labels["brightness"], scale=60),
+        "contrast": slider_value(labels["contrast"], scale=60),
+        "saturation": slider_value(labels["saturation"], scale=60),
+        "temperature": slider_value(labels["temperature"], scale=60),
+        "clarity": slider_value(labels["clarity"], scale=60),
     }
 
 
@@ -147,9 +147,13 @@ def slider_suggestions_from_labels(labels: dict[str, float]) -> list[tuple[str, 
 def slider_direction(value: int) -> str:
     if value > 0:
         low, high = range_magnitudes(value)
+        if low == 0:
+            return f"increase by up to {high}"
         return f"increase by {low} to {high}"
     if value < 0:
         low, high = range_magnitudes(value)
+        if low == 0:
+            return f"decrease by up to {high}"
         return f"decrease by {low} to {high}"
     return "keep close to 0"
 
@@ -160,8 +164,10 @@ def slider_range(value: int) -> str:
 
     low, high = range_magnitudes(value)
     if value > 0:
-        return f"+{low}~+{high}"
-    return f"-{high}~-{low}"
+        low_text = "0" if low == 0 else f"+{low}"
+        return f"{low_text}~+{high}"
+    high_text = "0" if low == 0 else f"-{low}"
+    return f"-{high}~{high_text}"
 
 
 def direction(value: float) -> str:
@@ -228,27 +234,15 @@ def slider_value(value: float, scale: int) -> int:
     return int(round(clamp(value) * scale))
 
 
-def exaggerated_slider_value(value: float, scale: int) -> int:
-    if abs(value) < 0.01:
-        return 0
-
-    sign = 1 if value > 0 else -1
-    magnitude = abs(value) * scale
-    magnitude = max(20, min(60, round_to_nearest_five(magnitude)))
-    return sign * magnitude
-
-
 def range_magnitudes(value: int) -> tuple[int, int]:
     magnitude = abs(value)
-    low = max(20, round_to_nearest_five(magnitude - 5))
-    high = min(60, round_to_nearest_five(magnitude + 15))
+    if magnitude <= 2:
+        return 0, 5
+    low = max(0, magnitude - 5)
+    high = min(60, magnitude + 5)
     if high <= low:
-        high = min(60, low + 15)
+        high = min(60, low + 5)
     return low, high
-
-
-def round_to_nearest_five(value: float) -> int:
-    return int(round(value / 5.0) * 5)
 
 
 def clamp(value: float, low: float = -1.0, high: float = 1.0) -> float:
