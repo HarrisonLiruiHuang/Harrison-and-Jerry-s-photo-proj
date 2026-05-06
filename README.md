@@ -77,6 +77,22 @@ Evaluation reports PSNR and SSIM. Visual comparison grids are saved to
 Original | Model output | Expert D target
 ```
 
+## Use on New Photos
+
+Enhance one new image:
+
+```bash
+python predict.py --input path/to/photo.jpg --checkpoint checkpoints/best.pt
+```
+
+Enhance every image in a folder:
+
+```bash
+python predict.py --input path/to/photos --checkpoint checkpoints/best.pt
+```
+
+Enhanced images are saved to `outputs/predictions/`.
+
 ## Research Question
 
 Can a neural network learn to automatically enhance original photos to match
