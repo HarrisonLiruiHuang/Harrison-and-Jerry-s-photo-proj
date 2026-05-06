@@ -1,10 +1,12 @@
 # Harrison and Jerry's Photo Project
 
-Image-to-image photo enhancement using the MIT-Adobe FiveK dataset.
+Image-to-text photo editing suggestions using the MIT-Adobe FiveK dataset.
 
-The input image is the original unedited FiveK photo. The target image is the
-Expert D retouched version. The model is a simple U-Net decoder fine-tuned on
-top of an ImageNet-pretrained ResNet18 encoder.
+The input is the original unedited FiveK photo. The target is structured text
+that describes how Expert D changed the image: brightness, contrast, highlights,
+shadows, temperature, tint, saturation, and clarity. Since FiveK does not include
+natural-language suggestions directly, this project converts the difference
+between the original image and Expert D's retouched image into text labels.
 
 Large data folders are intentionally kept out of Git. The repo expects the
 source folders to live next to this project folder:
@@ -49,61 +51,50 @@ data/
 
 ## Train
 
-L1-only baseline:
+Train the image-to-text suggestion model:
 
 ```bash
-python train.py --epochs 10 --batch-size 4
+python train.py --epochs 15 --batch-size 8
 ```
 
-Optional L1 + SSIM fine-tuning:
-
-```bash
-python train.py --epochs 10 --batch-size 4 --ssim-weight 0.1
-```
-
-The default model uses pretrained ResNet18 encoder weights and fine-tunes on the
-FiveK subset.
+The model uses pretrained ResNet18 image features and fine-tunes a small
+regression head that predicts Expert D-style editing changes.
 
 ## Evaluate
 
 ```bash
-python evaluate.py --checkpoint checkpoints/best.pt --split test
+python evaluate.py --checkpoint checkpoints/suggestions/best.pt --split test
 ```
 
-Evaluation reports PSNR and SSIM. Visual comparison grids are saved to
-`outputs/comparisons/` with:
-
-```text
-Original | Model output | Expert D target
-```
+Evaluation reports regression loss and prints example text suggestions.
 
 ## Use on New Photos
 
-Enhance one new image:
+Generate suggestions for one new image:
 
 ```bash
-python predict.py --input path/to/photo.jpg --checkpoint checkpoints/best.pt
+python predict.py --input path/to/photo.jpg --checkpoint checkpoints/suggestions/best.pt
 ```
 
-Enhance every image in a folder:
+Generate suggestions for every image in `new_photos/`:
 
 ```bash
-python predict.py --input new_photos --checkpoint checkpoints/best.pt
+python predict.py --input new_photos --checkpoint checkpoints/suggestions/best.pt
 ```
-
-Enhanced images are saved to `outputs/predictions/`.
 
 ## Local Web App
 
 Run a browser UI for uploading and enhancing images:
 
 ```bash
-python web_app.py --checkpoint checkpoints/best.pt
+python web_app.py --checkpoint checkpoints/suggestions/best.pt
 ```
 
-Then open `http://127.0.0.1:8000`.
+Then open `http://127.0.0.1:8000`. The page shows the original image,
+a manual slider preview, and model-generated text suggestions based on the input
+image.
 
 ## Research Question
 
-Can a neural network learn to automatically enhance original photos to match
-Expert D's professional retouching style?
+Can a neural network learn to analyze an original photo and generate useful
+editing suggestions that approximate Expert D's professional retouching style?
