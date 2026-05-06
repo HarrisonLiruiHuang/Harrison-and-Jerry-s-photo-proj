@@ -118,8 +118,9 @@ HTML_PAGE = """<!doctype html>
     img {{
       display: block;
       width: 100%;
-      aspect-ratio: 1;
-      object-fit: cover;
+      height: auto;
+      max-height: 720px;
+      object-fit: contain;
       background: #e5e5e0;
     }}
     .manual-preview {{
@@ -304,14 +305,19 @@ class SuggestionServer(BaseHTTPRequestHandler):
     @torch.no_grad()
     def suggest(self, image_bytes: bytes) -> tuple[Image.Image, dict[str, float], list[str]]:
         with Image.open(io.BytesIO(image_bytes)) as image:
-            image = ImageOps.exif_transpose(image).convert("RGB")
-            image = ImageOps.fit(image, (self.image_size, self.image_size), method=Image.Resampling.LANCZOS)
+            original = ImageOps.exif_transpose(image).convert("RGB")
 
-        tensor = F.to_tensor(image).unsqueeze(0).to(self.device)
+        model_image = ImageOps.fit(
+            original,
+            (self.image_size, self.image_size),
+            method=Image.Resampling.LANCZOS,
+        )
+
+        tensor = F.to_tensor(model_image).unsqueeze(0).to(self.device)
         prediction = self.model(tensor).squeeze(0)
         labels = tensor_to_labels(prediction)
-        suggestions = suggestions_from_labels(labels, image)
-        return image, labels, suggestions
+        suggestions = suggestions_from_labels(labels, model_image)
+        return original, labels, suggestions
 
     def send_page(self, message: str = "", result: str = "") -> None:
         page = HTML_PAGE.format(
@@ -384,6 +390,8 @@ def image_to_base64(image: Image.Image) -> str:
     buffer = io.BytesIO()
     image.save(buffer, format="JPEG", quality=95)
     return base64.b64encode(buffer.getvalue()).decode()
+
+
 
 
 if __name__ == "__main__":

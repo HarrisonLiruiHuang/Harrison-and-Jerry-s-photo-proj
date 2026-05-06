@@ -92,7 +92,8 @@ python web_app.py --checkpoint checkpoints/suggestions/best.pt
 
 Then open `http://127.0.0.1:8000`. The page shows the original image,
 a manual slider preview, and model-generated text suggestions based on the input
-image.
+image. The web preview uses the uploaded image at its original resolution, while
+the model still analyzes a 256 x 256 copy internally.
 
 ## Research Question
 
