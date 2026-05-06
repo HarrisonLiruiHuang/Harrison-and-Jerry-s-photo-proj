@@ -116,7 +116,7 @@ HTML_PAGE = """<!doctype html>
       font-weight: 760;
       border-bottom: 1px solid #dde2de;
     }}
-    img {{
+    img, canvas {{
       display: block;
       width: 100%;
       height: auto;
@@ -124,13 +124,8 @@ HTML_PAGE = """<!doctype html>
       object-fit: contain;
       background: #e5e5e0;
     }}
-    .manual-preview {{
-      filter:
-        brightness(var(--exposure, 1))
-        contrast(var(--contrast, 1))
-        saturate(var(--vibrance, 1))
-        sepia(var(--warmth, 0))
-        hue-rotate(var(--cool, 0deg));
+    .source-image {{
+      display: none;
     }}
     .suggestions {{
       margin-top: 16px;
@@ -229,10 +224,35 @@ HTML_PAGE = """<!doctype html>
     {result}
   </main>
   <script>
-    const preview = document.querySelector("[data-preview]");
+    const sourceImage = document.querySelector("[data-source-image]");
+    const previewCanvas = document.querySelector("[data-preview-canvas]");
     const controls = document.querySelectorAll("[data-control]");
+    let originalImageData = null;
+    let renderQueued = false;
+
+    const clamp = (value) => Math.max(0, Math.min(255, value));
+    const smoothstep = (edge0, edge1, value) => {{
+      const t = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
+      return t * t * (3 - 2 * t);
+    }};
+    const saturationOf = (r, g, b) => {{
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      return max === 0 ? 0 : (max - min) / max;
+    }};
+
+    const setupCanvas = () => {{
+      if (!sourceImage || !previewCanvas || !sourceImage.naturalWidth) return;
+      previewCanvas.width = sourceImage.naturalWidth;
+      previewCanvas.height = sourceImage.naturalHeight;
+      const ctx = previewCanvas.getContext("2d", {{ willReadFrequently: true }});
+      ctx.drawImage(sourceImage, 0, 0);
+      originalImageData = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+      updatePreview();
+    }};
+
     const updatePreview = () => {{
-      if (!preview) return;
+      if (!previewCanvas || !originalImageData) return;
       const values = {{}};
       controls.forEach((control) => {{
         const name = control.dataset.control;
@@ -241,18 +261,103 @@ HTML_PAGE = """<!doctype html>
         const output = document.querySelector(`[data-value="${{name}}"]`);
         if (output) output.textContent = value > 0 ? `+${{value}}` : String(value);
       }});
-      const exposure = (values.exposure || 0) + (values.brilliance || 0) * 0.35 + (values.shadows || 0) * 0.18 - (values.highlights || 0) * 0.12;
-      const contrast = (values.contrast || 0) + (values.brilliance || 0) * 0.20 + (values.sharpness || 0) * 0.12;
-      const vibrance = values.vibrance || 0;
-      const warmth = values.warmth || 0;
-      preview.style.setProperty("--exposure", String(1 + exposure / 100));
-      preview.style.setProperty("--contrast", String(1 + contrast / 100));
-      preview.style.setProperty("--vibrance", String(1 + vibrance / 100));
-      preview.style.setProperty("--warmth", String(Math.max(0, warmth) / 160));
-      preview.style.setProperty("--cool", `${{Math.min(0, warmth) * 0.45}}deg`);
+      if (renderQueued) return;
+      renderQueued = true;
+      requestAnimationFrame(() => {{
+        renderQueued = false;
+        renderPixels(values);
+      }});
     }};
+
+    const renderPixels = (values) => {{
+      const ctx = previewCanvas.getContext("2d", {{ willReadFrequently: true }});
+      const source = originalImageData.data;
+      const edited = new ImageData(
+        new Uint8ClampedArray(source),
+        originalImageData.width,
+        originalImageData.height
+      );
+      const data = edited.data;
+      const exposure = (values.exposure || 0) / 100;
+      const highlights = (values.highlights || 0) / 100;
+      const shadows = (values.shadows || 0) / 100;
+      const contrast = ((values.contrast || 0) + (values.brilliance || 0) * 0.25) / 100;
+      const vibrance = (values.vibrance || 0) / 100;
+      const warmth = (values.warmth || 0) / 100;
+      const brilliance = (values.brilliance || 0) / 100;
+
+      for (let i = 0; i < data.length; i += 4) {{
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
+        const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        const highlightMask = smoothstep(0.55, 0.98, lum);
+        const shadowMask = 1 - smoothstep(0.04, 0.45, lum);
+        const midMask = 1 - Math.abs(lum - 0.5) * 2;
+
+        let delta = exposure * 70;
+        delta += highlights * 95 * highlightMask;
+        delta += shadows * 95 * shadowMask;
+        delta += brilliance * 45 * Math.max(0, midMask);
+        delta += brilliance * 35 * shadowMask;
+        delta -= brilliance * 20 * highlightMask;
+        r += delta;
+        g += delta;
+        b += delta;
+
+        const contrastFactor = 1 + contrast;
+        r = (r - 128) * contrastFactor + 128;
+        g = (g - 128) * contrastFactor + 128;
+        b = (b - 128) * contrastFactor + 128;
+
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        const sat = saturationOf(r, g, b);
+        const vibranceFactor = 1 + vibrance * (1.15 - sat);
+        r = gray + (r - gray) * vibranceFactor;
+        g = gray + (g - gray) * vibranceFactor;
+        b = gray + (b - gray) * vibranceFactor;
+
+        r += warmth * 36;
+        b -= warmth * 36;
+        g += warmth * 6;
+
+        data[i] = clamp(r);
+        data[i + 1] = clamp(g);
+        data[i + 2] = clamp(b);
+      }}
+
+      applySharpness(edited, (values.sharpness || 0) / 100);
+      ctx.putImageData(edited, 0, 0);
+    }};
+
+    const applySharpness = (imageData, amount) => {{
+      if (Math.abs(amount) < 0.01) return;
+      const width = imageData.width;
+      const height = imageData.height;
+      const input = new Uint8ClampedArray(imageData.data);
+      const output = imageData.data;
+      const strength = amount * 0.9;
+      for (let y = 1; y < height - 1; y += 1) {{
+        for (let x = 1; x < width - 1; x += 1) {{
+          const idx = (y * width + x) * 4;
+          for (let channel = 0; channel < 3; channel += 1) {{
+            const center = input[idx + channel];
+            const left = input[idx - 4 + channel];
+            const right = input[idx + 4 + channel];
+            const up = input[idx - width * 4 + channel];
+            const down = input[idx + width * 4 + channel];
+            const blur = (left + right + up + down) / 4;
+            output[idx + channel] = clamp(center + (center - blur) * strength);
+          }}
+        }}
+      }}
+    }};
+
     controls.forEach((control) => control.addEventListener("input", updatePreview));
-    updatePreview();
+    if (sourceImage) {{
+      if (sourceImage.complete) setupCanvas();
+      sourceImage.addEventListener("load", setupCanvas);
+    }}
   </script>
 </body>
 </html>
@@ -267,7 +372,8 @@ RESULT_HTML = """
   </figure>
   <figure>
     <figcaption>Manual slider preview</figcaption>
-    <img data-preview class="manual-preview" src="data:image/jpeg;base64,{image}">
+    <img data-source-image class="source-image" src="data:image/jpeg;base64,{image}">
+    <canvas data-preview-canvas></canvas>
   </figure>
 </section>
 <section class="controls">

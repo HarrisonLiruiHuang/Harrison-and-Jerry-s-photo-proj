@@ -94,6 +94,8 @@ Then open `http://127.0.0.1:8000`. The page shows the original image,
 a manual slider preview, and model-generated text suggestions based on the input
 image. The web preview uses the uploaded image at its original resolution, while
 the model still analyzes a 256 x 256 copy internally.
+The preview is edited with canvas pixel operations, so Highlights mainly affects
+bright pixels and Shadows mainly affects dark pixels.
 
 The web suggestions use the same numeric controls as the manual editor:
 Highlights, Shadows, Contrast, Vibrance, Sharpness, Exposure, Brilliance, and
