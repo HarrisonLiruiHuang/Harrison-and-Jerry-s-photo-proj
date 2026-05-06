@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Local data / generated image folders
+raw/
+d/
+data/
+dataset/
+datasets/
+*.zip
