@@ -402,28 +402,20 @@ def controls_to_html(defaults: dict[str, int]) -> str:
 
 def suggestions_to_html(labels: dict[str, float]) -> str:
     rows = []
-    for label, value, direction in slider_suggestions_from_labels(labels):
-        signed_value = format_signed(value)
+    for label, value_range, direction in slider_suggestions_from_labels(labels):
         rows.append(
             "<tr>"
             f"<td>{html.escape(label)}</td>"
-            f"<td>{html.escape(signed_value)}</td>"
+            f"<td>{html.escape(value_range)}</td>"
             f"<td>{html.escape(direction)}</td>"
             "</tr>"
         )
     return (
         "<table class='suggestion-table'>"
-        "<thead><tr><th>Adjustment</th><th>Value</th><th>Meaning</th></tr></thead>"
+        "<thead><tr><th>Adjustment</th><th>Range</th><th>Meaning</th></tr></thead>"
         f"<tbody>{''.join(rows)}</tbody>"
         "</table>"
     )
-
-
-def format_signed(value: int) -> str:
-    if value > 0:
-        return f"+{value}"
-    return str(value)
-
 
 def image_to_base64(image: Image.Image) -> str:
     buffer = io.BytesIO()

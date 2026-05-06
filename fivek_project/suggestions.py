@@ -128,28 +128,40 @@ def suggestions_from_labels(labels: dict[str, float], image: Image.Image | None 
 
 def slider_defaults_from_labels(labels: dict[str, float]) -> dict[str, int]:
     return {
-        "brightness": slider_value(labels["brightness"], scale=36),
-        "contrast": slider_value(labels["contrast"], scale=34),
-        "saturation": slider_value(labels["saturation"], scale=40),
-        "temperature": slider_value(labels["temperature"], scale=24),
-        "clarity": slider_value(labels["clarity"], scale=22),
+        "brightness": exaggerated_slider_value(labels["brightness"], scale=95),
+        "contrast": exaggerated_slider_value(labels["contrast"], scale=90),
+        "saturation": exaggerated_slider_value(labels["saturation"], scale=100),
+        "temperature": exaggerated_slider_value(labels["temperature"], scale=85),
+        "clarity": exaggerated_slider_value(labels["clarity"], scale=85),
     }
 
 
-def slider_suggestions_from_labels(labels: dict[str, float]) -> list[tuple[str, int, str]]:
+def slider_suggestions_from_labels(labels: dict[str, float]) -> list[tuple[str, str, str]]:
     values = slider_defaults_from_labels(labels)
     return [
-        (SLIDER_LABELS[name], values[name], slider_direction(values[name]))
+        (SLIDER_LABELS[name], slider_range(values[name]), slider_direction(values[name]))
         for name in SLIDER_LABELS
     ]
 
 
 def slider_direction(value: int) -> str:
     if value > 0:
-        return f"increase by {value}"
+        low, high = range_magnitudes(value)
+        return f"increase by {low} to {high}"
     if value < 0:
-        return f"decrease by {abs(value)}"
-    return "keep at 0"
+        low, high = range_magnitudes(value)
+        return f"decrease by {low} to {high}"
+    return "keep close to 0"
+
+
+def slider_range(value: int) -> str:
+    if value == 0:
+        return "0"
+
+    low, high = range_magnitudes(value)
+    if value > 0:
+        return f"+{low}~+{high}"
+    return f"-{high}~-{low}"
 
 
 def direction(value: float) -> str:
@@ -214,6 +226,29 @@ def overall_sentence(labels: dict[str, float]) -> str:
 
 def slider_value(value: float, scale: int) -> int:
     return int(round(clamp(value) * scale))
+
+
+def exaggerated_slider_value(value: float, scale: int) -> int:
+    if abs(value) < 0.01:
+        return 0
+
+    sign = 1 if value > 0 else -1
+    magnitude = abs(value) * scale
+    magnitude = max(20, min(60, round_to_nearest_five(magnitude)))
+    return sign * magnitude
+
+
+def range_magnitudes(value: int) -> tuple[int, int]:
+    magnitude = abs(value)
+    low = max(20, round_to_nearest_five(magnitude - 5))
+    high = min(60, round_to_nearest_five(magnitude + 15))
+    if high <= low:
+        high = min(60, low + 15)
+    return low, high
+
+
+def round_to_nearest_five(value: float) -> int:
+    return int(round(value / 5.0) * 5)
 
 
 def clamp(value: float, low: float = -1.0, high: float = 1.0) -> float:
