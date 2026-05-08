@@ -28,6 +28,9 @@ SLIDER_LABELS = {
     "warmth": "Warmth",
 }
 
+SLIDER_SCALE = -180
+SLIDER_LIMIT = 100
+
 
 @dataclass
 class ImageStats:
@@ -131,14 +134,14 @@ def suggestions_from_labels(labels: dict[str, float], image: Image.Image | None 
 
 def slider_defaults_from_labels(labels: dict[str, float]) -> dict[str, int]:
     return {
-        "highlights": slider_value(labels["highlights"], scale=60),
-        "shadows": slider_value(labels["shadows"], scale=60),
-        "contrast": slider_value(labels["contrast"], scale=60),
-        "vibrance": slider_value(labels["saturation"], scale=60),
-        "sharpness": slider_value(labels["clarity"], scale=60),
-        "exposure": slider_value(labels["brightness"], scale=60),
-        "brilliance": slider_value(brilliance_value(labels), scale=60),
-        "warmth": slider_value(labels["temperature"], scale=60),
+        "highlights": slider_value(labels["highlights"], scale=SLIDER_SCALE),
+        "shadows": slider_value(labels["shadows"], scale=SLIDER_SCALE),
+        "contrast": slider_value(labels["contrast"], scale=SLIDER_SCALE),
+        "vibrance": slider_value(labels["saturation"], scale=SLIDER_SCALE),
+        "sharpness": slider_value(labels["clarity"], scale=SLIDER_SCALE),
+        "exposure": slider_value(labels["brightness"], scale=SLIDER_SCALE),
+        "brilliance": slider_value(brilliance_value(labels), scale=SLIDER_SCALE),
+        "warmth": slider_value(labels["temperature"], scale=SLIDER_SCALE),
     }
 
 
@@ -237,7 +240,8 @@ def overall_sentence(labels: dict[str, float]) -> str:
 
 
 def slider_value(value: float, scale: int) -> int:
-    return int(round(clamp(value) * scale))
+    scaled_value = int(round(clamp(value) * scale))
+    return max(-SLIDER_LIMIT, min(SLIDER_LIMIT, scaled_value))
 
 
 def brilliance_value(labels: dict[str, float]) -> float:
@@ -254,9 +258,9 @@ def range_magnitudes(value: int) -> tuple[int, int]:
     if magnitude <= 2:
         return 0, 5
     low = max(0, magnitude - 5)
-    high = min(60, magnitude + 5)
+    high = min(SLIDER_LIMIT, magnitude + 5)
     if high <= low:
-        high = min(60, low + 5)
+        high = min(SLIDER_LIMIT, low + 5)
     return low, high
 
 

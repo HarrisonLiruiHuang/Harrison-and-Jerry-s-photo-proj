@@ -27,7 +27,7 @@ HTML_PAGE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FiveK Editing Suggestions</title>
+  <title>Photo suggestions</title>
   <style>
     :root {{
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -211,8 +211,7 @@ HTML_PAGE = """<!doctype html>
 <body>
   <main>
     <header>
-      <h1>FiveK Editing Suggestions</h1>
-      <div class="status">Image-to-text model: {checkpoint}</div>
+      <h1>Photo suggestions</h1>
     </header>
     <section class="panel">
       <form method="post" action="/suggest" enctype="multipart/form-data">
@@ -390,7 +389,7 @@ RESULT_HTML = """
 CONTROL_HTML = """
 <label class="control">
   <span>{label}</span>
-  <input data-control="{name}" type="range" min="-60" max="60" value="{value}">
+  <input data-control="{name}" type="range" min="-100" max="100" value="{value}">
   <span class="value" data-value="{name}">{value}</span>
 </label>
 """
