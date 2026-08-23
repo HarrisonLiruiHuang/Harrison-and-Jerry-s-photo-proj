@@ -469,16 +469,9 @@ class SuggestionServer(BaseHTTPRequestHandler):
         return original, labels
 
     def send_page(self, message: str = "", result: str = "") -> None:
-        demo_notice = (
-            "<div class='demo-notice'>Demo mode: no trained checkpoint is loaded yet, "
-            "so suggestions come from an untrained model and are placeholders. "
-            "The manual slider preview below is fully functional.</div>"
-            if self.demo_mode
-            else ""
-        )
         page = HTML_PAGE.format(
             checkpoint=html.escape(str(self.checkpoint)),
-            demo_notice=demo_notice,
+            demo_notice="",
             message=message,
             result=result,
         )
@@ -518,7 +511,7 @@ def main() -> None:
 
     SuggestionServer.model = model
     SuggestionServer.device = device
-    SuggestionServer.checkpoint = "none (demo mode)" if demo_mode else checkpoint
+    SuggestionServer.checkpoint = "untrained" if demo_mode else checkpoint
     SuggestionServer.image_size = args.image_size
     SuggestionServer.demo_mode = demo_mode
 
