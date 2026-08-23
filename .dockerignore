@@ -1,0 +1,15 @@
+.git
+.venv
+__pycache__/
+*.pyc
+raw/
+d/
+data/
+dataset/
+datasets/
+outputs/
+runs/
+checkpoints/
+new_photos/*
+!new_photos/.gitkeep
+.DS_Store

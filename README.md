@@ -1,3 +1,13 @@
+---
+title: FiveK Editing Suggestions
+emoji: 🖼️
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Harrison and Jerry's Photo Project
 
 Image-to-text photo editing suggestions using the MIT-Adobe FiveK dataset.
@@ -102,6 +112,16 @@ Highlights, Shadows, Contrast, Vibrance, Sharpness, Exposure, Brilliance, and
 Warmth. Positive values mean increase; negative values mean decrease.
 Suggestions are shown as ranges around the trained model's predicted slider
 value.
+
+## Hosted Demo
+
+This repo is set up to run as a Hugging Face Space (Docker SDK, see the
+`Dockerfile`). Without a checkpoint at `checkpoints/suggestions/best.pt`,
+`web_app.py` starts in **demo mode**: the page and manual slider editor work
+normally, but the model-generated suggestions come from an untrained network
+and are placeholders. Once a trained checkpoint exists, add it to the Space
+(e.g. via the Files tab or `git lfs`) at that same path and restart the Space
+to switch it into the trained, non-demo mode automatically.
 
 ## Research Question
 

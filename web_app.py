@@ -101,6 +101,15 @@ HTML_PAGE = """<!doctype html>
       color: #8a2d21;
       font-weight: 650;
     }}
+    .demo-notice {{
+      margin-bottom: 18px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      background: #fdf3e0;
+      border: 1px solid #e7c988;
+      color: #6b4c14;
+      font-size: 14px;
+    }}
     .workspace {{
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -214,6 +223,7 @@ HTML_PAGE = """<!doctype html>
       <h1>FiveK Editing Suggestions</h1>
       <div class="status">Image-to-text model: {checkpoint}</div>
     </header>
+    {demo_notice}
     <section class="panel">
       <form method="post" action="/suggest" enctype="multipart/form-data">
         <input type="file" name="photo" accept="image/*" required>
@@ -401,6 +411,7 @@ class SuggestionServer(BaseHTTPRequestHandler):
     device = None
     checkpoint = None
     image_size = 256
+    demo_mode = False
 
     def do_GET(self) -> None:
         if urlparse(self.path).path == "/":
@@ -458,8 +469,16 @@ class SuggestionServer(BaseHTTPRequestHandler):
         return original, labels
 
     def send_page(self, message: str = "", result: str = "") -> None:
+        demo_notice = (
+            "<div class='demo-notice'>Demo mode: no trained checkpoint is loaded yet, "
+            "so suggestions come from an untrained model and are placeholders. "
+            "The manual slider preview below is fully functional.</div>"
+            if self.demo_mode
+            else ""
+        )
         page = HTML_PAGE.format(
             checkpoint=html.escape(str(self.checkpoint)),
+            demo_notice=demo_notice,
             message=message,
             result=result,
         )
@@ -485,19 +504,23 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     checkpoint = Path(args.checkpoint)
-    if not checkpoint.exists():
-        raise FileNotFoundError(f"Checkpoint not found: {checkpoint}. Train first with train.py.")
-
     device = pick_device()
-    model = build_suggestion_model(pretrained=False).to(device)
-    saved = torch.load(checkpoint, map_location=device)
-    model.load_state_dict(saved["model"])
+    demo_mode = not checkpoint.exists()
+
+    if demo_mode:
+        print(f"No checkpoint found at {checkpoint}; starting in demo mode with an untrained model.")
+        model = build_suggestion_model(pretrained=True).to(device)
+    else:
+        model = build_suggestion_model(pretrained=False).to(device)
+        saved = torch.load(checkpoint, map_location=device)
+        model.load_state_dict(saved["model"])
     model.eval()
 
     SuggestionServer.model = model
     SuggestionServer.device = device
-    SuggestionServer.checkpoint = checkpoint
+    SuggestionServer.checkpoint = "none (demo mode)" if demo_mode else checkpoint
     SuggestionServer.image_size = args.image_size
+    SuggestionServer.demo_mode = demo_mode
 
     server = ThreadingHTTPServer((args.host, args.port), SuggestionServer)
     print(f"Open http://{args.host}:{args.port}")
