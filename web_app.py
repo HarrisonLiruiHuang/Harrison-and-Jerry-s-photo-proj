@@ -27,7 +27,7 @@ HTML_PAGE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FiveK Editing Suggestions</title>
+  <title>PixelAdvisor</title>
   <style>
     :root {{
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -38,6 +38,21 @@ HTML_PAGE = """<!doctype html>
       margin: 0;
       min-height: 100vh;
       background: linear-gradient(135deg, #f7f4ef, #e8efec 48%, #eef0f5);
+    }}
+    .progress-bar {{
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, #214236, #4f9c7d);
+      z-index: 9999;
+      opacity: 0;
+      transition: width 6s cubic-bezier(0.1, 0.7, 0.3, 1), opacity 0.2s;
+    }}
+    .progress-bar.active {{
+      width: 90%;
+      opacity: 1;
     }}
     main {{
       width: min(1180px, calc(100% - 32px));
@@ -55,10 +70,6 @@ HTML_PAGE = """<!doctype html>
       margin: 0;
       font-size: 30px;
       line-height: 1.1;
-    }}
-    .status {{
-      color: #4a534e;
-      font-size: 14px;
     }}
     .panel, figure, .suggestions, .controls {{
       background: rgba(255,255,255,.88);
@@ -94,6 +105,10 @@ HTML_PAGE = """<!doctype html>
       min-height: 42px;
       padding: 0 18px;
       cursor: pointer;
+    }}
+    button:disabled {{
+      opacity: 0.7;
+      cursor: wait;
     }}
     .message {{
       margin: 12px 0 0;
@@ -217,10 +232,10 @@ HTML_PAGE = """<!doctype html>
   </style>
 </head>
 <body>
+  <div class="progress-bar" id="progressBar"></div>
   <main>
     <header>
-      <h1>FiveK Editing Suggestions</h1>
-      <div class="status">Image-to-text model: {checkpoint}</div>
+      <h1>PixelAdvisor</h1>
     </header>
     {demo_notice}
     <section class="panel">
@@ -366,6 +381,19 @@ HTML_PAGE = """<!doctype html>
     if (sourceImage) {{
       if (sourceImage.complete) setupCanvas();
       sourceImage.addEventListener("load", setupCanvas);
+    }}
+
+    const uploadForm = document.querySelector("form");
+    const progressBar = document.getElementById("progressBar");
+    if (uploadForm && progressBar) {{
+      uploadForm.addEventListener("submit", () => {{
+        progressBar.classList.add("active");
+        const submitButton = uploadForm.querySelector("button[type=submit]");
+        if (submitButton) {{
+          submitButton.disabled = true;
+          submitButton.textContent = "Analyzing...";
+        }}
+      }});
     }}
   </script>
 </body>
