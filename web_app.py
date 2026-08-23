@@ -79,10 +79,9 @@ HTML_PAGE = """<!doctype html>
     input[type="file"] {{
       width: 100%;
       min-height: 42px;
-      border: 1px solid #b8c0ba;
-      border-radius: 6px;
-      background: white;
-      padding: 8px;
+      border: 0;
+      background: transparent;
+      padding: 8px 0;
       font-size: 15px;
     }}
     button {{
