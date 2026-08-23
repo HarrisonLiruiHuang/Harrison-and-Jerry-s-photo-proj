@@ -509,7 +509,7 @@ def main() -> None:
 
     if demo_mode:
         print(f"No checkpoint found at {checkpoint}; starting in demo mode with an untrained model.")
-        model = build_suggestion_model(pretrained=True).to(device)
+        model = build_suggestion_model(pretrained=False).to(device)
     else:
         model = build_suggestion_model(pretrained=False).to(device)
         saved = torch.load(checkpoint, map_location=device)
