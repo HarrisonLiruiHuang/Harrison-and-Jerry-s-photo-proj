@@ -1,5 +1,8 @@
 # Harrison and Jerry's Photo Project
 
+**Live demo:** https://pixeladvisor-8nzv.onrender.com (free tier spins down
+after ~15 minutes idle; first request after that takes ~30-60s to wake up)
+
 Image-to-text photo editing suggestions using the MIT-Adobe FiveK dataset.
 
 The input is the original unedited FiveK photo. The target is structured text
@@ -104,6 +107,8 @@ Suggestions are shown as ranges around the trained model's predicted slider
 value.
 
 ## Hosted Demo
+
+The app is deployed at https://pixeladvisor-8nzv.onrender.com.
 
 Without a checkpoint at `checkpoints/suggestions/best.pt`, `web_app.py`
 starts in **demo mode**: the page and manual slider editor work normally,
