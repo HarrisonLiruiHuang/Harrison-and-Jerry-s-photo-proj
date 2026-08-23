@@ -1,13 +1,3 @@
----
-title: FiveK Editing Suggestions
-emoji: 🖼️
-colorFrom: green
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Harrison and Jerry's Photo Project
 
 Image-to-text photo editing suggestions using the MIT-Adobe FiveK dataset.
@@ -115,13 +105,31 @@ value.
 
 ## Hosted Demo
 
-This repo is set up to run as a Hugging Face Space (Docker SDK, see the
-`Dockerfile`). Without a checkpoint at `checkpoints/suggestions/best.pt`,
-`web_app.py` starts in **demo mode**: the page and manual slider editor work
-normally, but the model-generated suggestions come from an untrained network
-and are placeholders. Once a trained checkpoint exists, add it to the Space
-(e.g. via the Files tab or `git lfs`) at that same path and restart the Space
-to switch it into the trained, non-demo mode automatically.
+Without a checkpoint at `checkpoints/suggestions/best.pt`, `web_app.py`
+starts in **demo mode**: the page and manual slider editor work normally,
+but the model-generated suggestions come from an untrained network and are
+placeholders. Once a trained checkpoint exists, upload it to the host at
+that same path and restart the app to switch into trained, non-demo mode
+automatically.
+
+### Deploy to Render (free)
+
+This repo includes a `render.yaml` blueprint.
+
+1. Push this repo to GitHub (already done if you're reading this on GitHub).
+2. On [render.com](https://render.com), sign up (no credit card required for
+   the free tier) and choose **New > Blueprint**, then connect this repo.
+   Render will read `render.yaml` and set everything up automatically.
+3. Alternatively, configure manually: **New > Web Service**, connect the
+   repo, environment **Python 3**, build command `pip install -r
+   requirements.txt`, start command `python web_app.py --host 0.0.0.0
+   --port $PORT`, plan **Free**.
+4. The free plan spins the service down after ~15 minutes idle; the first
+   request after that takes ~30-60s to wake back up.
+
+A `Dockerfile` is also included if you'd rather deploy to a Docker-based
+host (Hugging Face Spaces Docker SDK requires a paid PRO plan to create;
+Render, Fly.io, and Railway can all build it directly).
 
 ## Research Question
 
